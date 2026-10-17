@@ -5,6 +5,7 @@ import { F, Patient, cap, useData } from "@/lib/data";
 import { bodyTiles } from "@/lib/body";
 import { effective, langFor, nameFor } from "@/lib/names";
 import PatientHome from "@/components/PatientHome";
+import CoachTour from "@/components/CoachTour";
 import { Status, levelRank, statusFor } from "@/lib/status";
 import { markCalled, useStore } from "@/lib/store";
 import { useMessage } from "@/lib/useMessage";
@@ -42,12 +43,15 @@ export default function Coach() {
 
   return (
     <main style={{ maxWidth: 1200, margin: "0 auto", padding: "26px 16px 56px", fontFamily: FONT, color: C.ink }}>
-      <h1 style={{ fontSize: 34, margin: 0 }}>Today</h1>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <h1 style={{ fontSize: 34, margin: 0 }}>Today</h1>
+        <button onClick={() => window.dispatchEvent(new Event("kindred-tour"))} style={{ background: "#fff", border: `1px solid ${C.line}`, borderRadius: 99, padding: "8px 14px", fontSize: 15, fontFamily: FONT, cursor: "pointer", color: C.ink }}>Take the tour</button>
+      </div>
       <p style={{ margin: "4px 0 18px", color: C.mute, fontSize: 18 }}>
         {counts.red === 0 ? "Nobody needs a call today." : <><b style={{ color: C.red }}>{counts.red} {counts.red === 1 ? "person needs" : "people need"} a call</b> before their next appointment.</>}
       </p>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+      <div data-tour="filters" style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", width: "fit-content" }}>
         {([["red", `Call today (${counts.red})`], ["yellow", `Watch (${counts.yellow})`], ["all", `Everyone (${rows.length})`]] as [Filter, string][]).map(([f, label]) => (
           <button key={f} onClick={() => { setFilter(f); setSelId(null); }} style={{
             padding: "10px 16px", borderRadius: 99, fontSize: 16, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
@@ -60,12 +64,12 @@ export default function Coach() {
         <style>{`@media (max-width: 880px){ .kd-grid{ grid-template-columns: 1fr !important; } }`}</style>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "calc(100vh - 230px)", overflowY: "auto", paddingRight: 4 }}>
           {shown.length === 0 && <p style={{ color: C.mute, fontSize: 17, padding: 12 }}>Nobody here today.</p>}
-          {shown.slice(0, 100).map(({ p, s }) => {
+          {shown.slice(0, 100).map(({ p, s }, rowIdx) => {
             const on = sel?.p.id === p.id;
             const col = levelColor[s.level];
             const n = nameFor(p, st);
             return (
-              <button key={p.id} onClick={() => setSelId(p.id)} style={{
+              <button key={p.id} data-tour={rowIdx === 0 ? "first-row" : undefined} onClick={() => setSelId(p.id)} style={{
                 display: "flex", gap: 12, alignItems: "center", textAlign: "left", width: "100%", padding: "14px 14px",
                 borderRadius: 18, border: `1.5px solid ${on ? C.teal : C.line}`, background: "#fff", cursor: "pointer",
                 boxShadow: on ? SHADOW : "none", fontFamily: FONT, color: C.ink,
@@ -83,6 +87,7 @@ export default function Coach() {
 
         {sel ? <Detail key={sel.p.id + date} p={sel.p} s={sel.s} date={date} /> : <div />}
       </div>
+      <CoachTour />
     </main>
   );
 }
@@ -117,26 +122,26 @@ function Detail({ p, s, date }: { p: Patient; s: Status; date: string }) {
         <span style={{ fontSize: 16, fontWeight: 800, padding: "8px 16px", borderRadius: 99, background: col.main, color: "#fff" }}>{tagText[s.level]}</span>
       </div>
 
-      <div style={{ marginTop: 20, padding: "18px 20px", borderRadius: 18, background: col.soft }}>
+      <div data-tour="why" style={{ marginTop: 20, padding: "18px 20px", borderRadius: 18, background: col.soft }}>
         <h3 style={{ fontSize: 18, margin: "0 0 8px" }}>{s.level === "red" ? "Why call today" : "How they’re doing"}</h3>
         {s.reasons.length ? (
           <ul style={{ margin: 0, paddingLeft: 22, fontSize: 17, lineHeight: 1.7 }}>{s.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
         ) : <p style={{ margin: 0, fontSize: 17 }}>{s.level === "yellow" ? "Drifting a little from their normal. No call needed yet." : "Within their normal range."}</p>}
       </div>
 
-      <div style={{ marginTop: 14, padding: "16px 20px", borderRadius: 18, border: `1px solid ${C.line}` }}>
+      <div data-tour="next-step" style={{ marginTop: 14, padding: "16px 20px", borderRadius: 18, border: `1px solid ${C.line}` }}>
         <h3 style={{ fontSize: 16, margin: "0 0 6px", color: C.mute }}>Suggested next step {coach.loading && "(writing...)"}</h3>
         <p style={{ margin: 0, fontSize: 17, lineHeight: 1.55 }}>{coach.text}</p>
       </div>
 
       <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
         {s.level === "red" && !s.calledToday && (
-          <button onClick={() => markCalled(p.id, date)} style={{ flex: "1 1 200px", background: C.teal, color: "#fff", border: "none", borderRadius: 16, padding: "16px 20px", fontSize: 18, fontWeight: 800, fontFamily: FONT, cursor: "pointer" }}>
+          <button data-tour="called" onClick={() => markCalled(p.id, date)} style={{ flex: "1 1 200px", background: C.teal, color: "#fff", border: "none", borderRadius: 16, padding: "16px 20px", fontSize: 18, fontWeight: 800, fontFamily: FONT, cursor: "pointer" }}>
             I called {n.first}
           </button>
         )}
         {s.calledToday && <span style={{ flex: "1 1 200px", padding: "16px 20px", borderRadius: 16, background: C.greenSoft, color: C.green, fontWeight: 800, fontSize: 18, textAlign: "center" }}>Called today</span>}
-        <button onClick={() => setProfileOpen(true)} style={{ flex: "1 1 200px", border: `1px solid ${C.line}`, background: "#fff", borderRadius: 16, padding: "16px 20px", fontSize: 18, fontWeight: 700, color: C.ink, fontFamily: FONT, cursor: "pointer" }}>{n.first}’s profile and screen</button>
+        <button data-tour="profile" onClick={() => setProfileOpen(true)} style={{ flex: "1 1 200px", border: `1px solid ${C.line}`, background: "#fff", borderRadius: 16, padding: "16px 20px", fontSize: 18, fontWeight: 700, color: C.ink, fontFamily: FONT, cursor: "pointer" }}>{n.first}’s profile and screen</button>
       </div>
 
       <h3 style={{ fontSize: 18, margin: "24px 0 10px" }}>Last 3 days</h3>

@@ -49,7 +49,7 @@ export default function Header() {
   const link = (href: string, label: string) => {
     const on = path.startsWith(href);
     return (
-      <Link href={href} style={{ textDecoration: "none", fontSize: 16, fontWeight: 700, color: on ? C.ink : C.mute, padding: "8px 12px", borderRadius: 10, background: on ? C.soft : "transparent" }}>{label}</Link>
+      <Link href={href} data-tour={href === "/results" ? "accuracy" : undefined} style={{ textDecoration: "none", fontSize: 16, fontWeight: 700, color: on ? C.ink : C.mute, padding: "8px 12px", borderRadius: 10, background: on ? C.soft : "transparent" }}>{label}</Link>
     );
   };
   return (

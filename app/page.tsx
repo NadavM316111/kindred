@@ -36,6 +36,7 @@ export default function Start() {
           <span style={{ fontSize: 17, color: C.mute }}>See who needs a call today</span>
         </Link>
       </div>
+      
     </main>
   );
 }
